@@ -1,4 +1,4 @@
-package Parser
+package cumulus.Parser
 
 import scala.util.parsing.input.Positional
 
