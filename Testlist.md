@@ -1,0 +1,11 @@
+LEXER
+- 5 lexes to INT(5)
+
+PARSER
+- None
+
+INTERPRETER
+- None
+
+TYPECHECKER
+- None
