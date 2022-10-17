@@ -16,7 +16,10 @@ LEXER
 - **OK** null gives NULL()
 - **OK** let fun null gives LET(),FUN(),NULL()
 - **OK** while if else (){}=:,; gives correct tokens
-- =>match case class .new gives correct tokens
+- **OK** =>match case class .new gives correct tokens
+- **OK** // lexes to OP("//")
+- **OK** "# comment\n1" lexes to INT(1)
+- **OK** /* multiline \n \n comment */1 lexes to List()
 
 PARSER
 - None

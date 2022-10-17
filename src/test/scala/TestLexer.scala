@@ -110,4 +110,22 @@ class TestLexer extends AnyFunSuite {
     val tokens = apply(code)
     assert(tokens == List(ARROW(), MATCH(), CASE(), CLASS(), DOT(), NEW()))
   }
+
+  test(""""# comment" lexes to nothing""") {
+    val code = "# comment\n1"
+    val tokens = apply(code)
+    assert(tokens.head == INT(1))
+  }
+
+  test("""// lexes to OP("//")""") {
+    val code = "//"
+    val tokens = apply(code)
+    assert(tokens.head == OP("//"))
+  }
+
+  test("""/* multiline \n \n comment */ lexes to INT(1)""") {
+    val code = "/* multiline \n \n comment */1"
+    val tokens = apply(code)
+    assert(tokens.head == INT(1))
+  }
 }

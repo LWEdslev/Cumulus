@@ -10,14 +10,14 @@ import scala.util.parsing.input.Position
 object Lexer extends RegexParsers {
   override def skipWhitespace = true
 
-  override val whiteSpace: Regex = """[ \t\r\f\n]+""".r
+  override val whiteSpace: Regex = """(?:\s|#.*|/\*(?:.|[\n\r])*?\*/)+""".r
 
   private val keywords = Set("true", "false", "max", "if", "else", "while", "fun", "let", "match", "case", "class", "new", "null", "do")
 
   def apply(code: String): List[CuToken] = {
     parse(tokens, code) match
       case Success(result, _) => result
-      case p@(NoSuccess(_, _) | Failure(_, _) | Error(_, _)) => throw SyntaxError(getPosition(p.next))
+      case p @ (NoSuccess(_, _) | Failure(_, _) | Error(_, _)) => throw SyntaxError(getPosition(p.next))
   }
 
   private def tokens: Parser[List[CuToken]] =
@@ -79,7 +79,7 @@ object Lexer extends RegexParsers {
   }
 
   private def op: Parser[OP] = positioned {
-    """\+|\*|-|/|//|<=|==|<|%|!|\|\||\||&&|&|max""".r ^^ { op => OP(op) }
+    """\+|\*|-|//|/|<=|==|<|%|!|\|\||\||&&|&|max""".r ^^ { op => OP(op) }
   }
 
   private def simpleType: Parser[SIMPLE_TYPE] = positioned {
