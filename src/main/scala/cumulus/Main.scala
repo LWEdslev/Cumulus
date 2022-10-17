@@ -12,7 +12,7 @@ object Main {
     println(tokens)
     val ast = parse(code)
     println(ast)
-    val out = eval(ast)
+    val out = evalNew(code)
     println(out)
   }
 }

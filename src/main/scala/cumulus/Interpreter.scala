@@ -24,7 +24,7 @@ object Interpreter {
   private def makeEnv(): Env = Map[Var, Val]()
   private def makeSto(): Sto = Map[Loc, Val]()
 
-  def eval(code: String): (Val, Env, Sto) = eval(Parser.parse(code), makeEnv(), makeSto())
+  def evalNew(code: String): (Val, Env, Sto) = eval(Parser.parse(code), makeEnv(), makeSto())
 
   def eval(e: Exp, env: Env, sto: Sto): (Val, Env, Sto) = e match {
     case VarExp(x) => env(x) match
@@ -47,7 +47,7 @@ object Interpreter {
             case (FloatVal(a), IntVal(b)) => (FloatVal(a + b), env2, sto2)
             case (IntVal(a), FloatVal(b)) => (FloatVal(a + b), env2, sto2)
             case (FloatVal(a), FloatVal(b)) => (FloatVal(a + b), env2, sto2)
-            case (f1@FracVal(n1, d1), f2@FracVal(n2, d2)) =>
+            case (f1@FracVal(_, _), f2@FracVal(_, _)) =>
               val (newNumerator, env3, sto3) = eval(BinOpExp(
                 BinOpExp(getNumerator(f1), MultBinOp(), getDenominator(f2)),
                 PlusBinOp(),
@@ -55,90 +55,105 @@ object Interpreter {
               ), env2, sto2)
               val (newDenominator, env4, sto4) = eval(BinOpExp(getDenominator(f1), MultBinOp(), getDenominator(f2)), env3, sto3)
               (FracVal(newNumerator, newDenominator), env4, sto4)
-            case (a, f @ FracVal(n, d)) =>
+            case (_, FracVal(_, _)) =>
               eval(BinOpExp(right, PlusBinOp(), left), env2, sto2)
             case (f @ FracVal(_, d), IntVal(b)) =>
               val (newNumerator, env3, sto3) = eval(BinOpExp(
                 getNumerator(f), PlusBinOp(), BinOpExp(IntLit(b), MultBinOp(), getDenominator(f))), env2, sto2)
               (FracVal(newNumerator, d), env3, sto3)
             case (f @ FracVal(_, d), FloatVal(b)) =>
-              val (newNumerator, env3, sto3) = eval(BinOpExp(
-                getNumerator(f), PlusBinOp(), BinOpExp(FloatLit(b), MultBinOp(), getDenominator(f))), env2, sto2)
+              val (newNumerator, env3, sto3) = 
+                eval(BinOpExp(getNumerator(f), PlusBinOp(), 
+                  BinOpExp(FloatLit(b), MultBinOp(), getDenominator(f))), env2, sto2)
               (FracVal(newNumerator, d), env3, sto3)
-            case _ => ???
+            case _ => throw InterpreterError(s"adding $left and $right? you can't idiot", e)
         case MinusBinOp() =>
           (leftVal, rightVal) match
-            case (IntVal(a), IntVal(b)) => IntVal(a - b)
-            case (FloatVal(a), IntVal(b)) => FloatVal(a - b)
-            case (IntVal(a), FloatVal(b)) => FloatVal(a - b)
-            case (FloatVal(a), FloatVal(b)) => FloatVal(a - b)
-            case (f1@FracVal(n1, d1), f2@FracVal(n2, d2)) =>
-              FracVal(
-                eval(BinOpExp(
-                  BinOpExp(getNumerator(f1), MultBinOp(), getDenominator(f2)),
-                    MinusBinOp(),
-                  BinOpExp(getNumerator(f2), MultBinOp(), getDenominator(f1))
-                )), eval(BinOpExp(getDenominator(f1), MultBinOp(), getDenominator(f2)))
-              )
-            case (a, f@FracVal(n, d)) =>
-              eval(BinOpExp(right, PlusBinOp(), left))
+            case (IntVal(a), IntVal(b)) => (IntVal(a - b), env2, sto2)
+            case (FloatVal(a), IntVal(b)) => (FloatVal(a - b), env2, sto2)
+            case (IntVal(a), FloatVal(b)) => (FloatVal(a - b), env2, sto2)
+            case (FloatVal(a), FloatVal(b)) => (FloatVal(a - b), env2, sto2)
+            case (f1@FracVal(_, _), f2@FracVal(_, _)) =>
+              val (newNumerator, env3, sto3) = eval(BinOpExp(
+                BinOpExp(getNumerator(f1), MultBinOp(), getDenominator(f2)),
+                MinusBinOp(),
+                BinOpExp(getNumerator(f2), MultBinOp(), getDenominator(f1))
+              ), env2, sto2)
+              val (newDenominator, env4, sto4) = eval(BinOpExp(getDenominator(f1), MultBinOp(), getDenominator(f2)), env3, sto3)
+              (FracVal(newNumerator, newDenominator), env4, sto4)
+            case (_, FracVal(_, _)) => 
+              eval(BinOpExp(right, PlusBinOp(), left), env2, sto2)
             case (f@FracVal(_, d), IntVal(b)) =>
-              FracVal(
-                eval(BinOpExp(
-                  getNumerator(f), PlusBinOp(), BinOpExp(IntLit(-b), MultBinOp(), getDenominator(f)))), d)
+              val (newNumerator, env3, sto3) = eval(BinOpExp(
+                getNumerator(f), PlusBinOp(), BinOpExp(IntLit(-b), MultBinOp(), getDenominator(f))), env2, sto2)
+              (FracVal(newNumerator, d), env3, sto3)
             case (f@FracVal(_, d), FloatVal(b)) =>
-              FracVal(
-                eval(BinOpExp(
-                  getNumerator(f), PlusBinOp(), BinOpExp(FloatLit(-b), MultBinOp(), getDenominator(f)))), d)
-            case _ => ???
+              val (newNumerator, env3, sto3) = eval(BinOpExp(
+                getNumerator(f), PlusBinOp(), BinOpExp(FloatLit(-b), MultBinOp(), getDenominator(f))), env2, sto2)
+              (FracVal(newNumerator, d), env3, sto3)
+            case _ => throw InterpreterError(s"subtracting $left and $right? you can't idiot", e)
         case MultBinOp() =>
           (leftVal, rightVal) match
-            case (IntVal(a), IntVal(b)) => IntVal(a * b)
-            case (FloatVal(a), IntVal(b)) => FloatVal(a * b)
-            case (IntVal(a), FloatVal(b)) => FloatVal(a * b)
-            case (FloatVal(a), FloatVal(b)) => FloatVal(a * b)
-            case (a, f@FracVal(n, d)) =>
-              eval(BinOpExp(right, MultBinOp(), left))
-            case (f1@FracVal(n1, d1), f2@FracVal(n2, d2)) =>
-              FracVal(
-                eval(BinOpExp(
-                  getNumerator(f1), MultBinOp(), getNumerator(f2)
-                )), eval(BinOpExp(getDenominator(f1), MultBinOp(), getDenominator(f2)))
-              )
+            case (IntVal(a), IntVal(b)) => (IntVal(a * b), env2, sto2)
+            case (FloatVal(a), IntVal(b)) => (FloatVal(a * b), env2, sto2)
+            case (IntVal(a), FloatVal(b)) => (FloatVal(a * b), env2, sto2)
+            case (FloatVal(a), FloatVal(b)) => (FloatVal(a * b), env2, sto2)
+            case (_, FracVal(_, _)) =>
+              eval(BinOpExp(right, MultBinOp(), left), env2, sto2)
+            case (f1@FracVal(_, _), f2@FracVal(_, _)) =>
+              val (newNumerator, env3, sto3) = eval(BinOpExp(
+                getNumerator(f1), MultBinOp(), getNumerator(f2)
+              ), env2, sto2)
+              val (newDenominator, env4, sto4) = eval(BinOpExp(getDenominator(f1), MultBinOp(), getDenominator(f2)), env3, sto3)
+              (FracVal(newNumerator, newDenominator), env4, sto4)
             case (f@FracVal(_, d), IntVal(b)) =>
-              FracVal(
-                eval(BinOpExp(
-                  getNumerator(f), MultBinOp(), IntLit(b))), d)
+              val (newNumerator, env3, sto3) = eval(BinOpExp(
+                getNumerator(f), MultBinOp(), IntLit(b)), env2, sto2)
+              (FracVal(newNumerator, d), env3, sto3)
             case (f@FracVal(_, d), FloatVal(b)) =>
-              FracVal(
-                eval(BinOpExp(
-                  getNumerator(f), MultBinOp(), FloatLit(b))), d)
-            case _ => ???
+              val (newNumerator, env3, sto3) = eval(BinOpExp(
+                getNumerator(f), MultBinOp(), FloatLit(b)), env2, sto2)
+              (FracVal(newNumerator, d), env3, sto3)
+            case _ => throw InterpreterError(s"$left times $right, just no...", e)
         case DivBinOp() =>
           if (rightVal == IntVal(0)) throw InterpreterError(s"you can't even math, trying to divide by zero", e)
           (leftVal, rightVal) match
-            case (IntVal(a), IntVal(b)) => IntVal(a / b)
-            case (FloatVal(a), IntVal(b)) => FloatVal(a / b)
-            case (IntVal(a), FloatVal(b)) => FloatVal(a / b)
-            case (FloatVal(a), FloatVal(b)) => FloatVal(a / b)
-            case _ => ???
-        case FracBinOp() => FracVal(leftVal, rightVal)
-        case MaxBinOp() => ???
-        case ModuloBinOp() => ???
+            case (IntVal(a), IntVal(b)) => (IntVal(a / b), env2, sto2)
+            case (FloatVal(a), IntVal(b)) => (FloatVal(a / b), env2, sto2)
+            case (IntVal(a), FloatVal(b)) => (FloatVal(a / b), env2, sto2)
+            case (FloatVal(a), FloatVal(b)) => (FloatVal(a / b), env2, sto2)
+            case _ => throw InterpreterError(s"$left divided by $right?? you dumb fuck", e)
+        case FracBinOp() => (FracVal(leftVal, rightVal), env2, sto2)
+        case MaxBinOp() =>
+          (leftVal, rightVal) match
+            case (IntVal(a), IntVal(b)) => (IntVal(if (a > b) a else b), env2, sto2)
+            case (FloatVal(a), IntVal(b)) => (FloatVal(if (a > b) a else b), env2, sto2)
+            case (IntVal(a), FloatVal(b)) => (FloatVal(if (a > b) a else b), env2, sto2)
+            case (FloatVal(a), FloatVal(b)) => (FloatVal(if (a > b) a else b), env2, sto2)
+        case ModuloBinOp() =>
+          if (rightVal == IntVal(0)) throw InterpreterError(s"you can't even math, trying to modulo by zero", e)
+          (leftVal, rightVal) match
+            case (IntVal(a), IntVal(b)) => (IntVal(a % b), env2, sto2)
+            case (FloatVal(a), IntVal(b)) => (FloatVal(a % b), env2, sto2)
+            case (IntVal(a), FloatVal(b)) => (FloatVal(a % b), env2, sto2)
+            case (FloatVal(a), FloatVal(b)) => (FloatVal(a % b), env2, sto2)
+            case _ => throw InterpreterError(s"$left modulo by $right?? you dumb fuck", e)
     case UnOpExp(op, exp) =>
-      val value = eval(exp)
+      val (value, env1, sto1) = eval(exp, env, sto)
       op match
         case NegUnOp() =>
           value match
-            case IntVal(i) => IntVal(-i)
-            case FloatVal(f) => FloatVal(-f)
-            case f @ FracVal(n, d) => FracVal(eval(getNumerator(f)), d)
-            case _ => ???
-        case SimplifyOp() => calculateFrac(value, e)
+            case IntVal(i) => (IntVal(-i), env1, sto1)
+            case FloatVal(f) => (FloatVal(-f), env1, sto1)
+            case f @ FracVal(n, d) => 
+              val (newNumerator, env2, sto2) = eval(getNumerator(f), env1, sto1)
+              (FracVal(newNumerator, d), env2, sto2)
+            case _ => throw InterpreterError(s"trying to negate $value, which makes no sense", e)
+        case SimplifyOp() => (calculateFrac(value, e), env1, sto1)
     case BlockExp(vars, exp) => ???
     case lit: Lit => lit match
-      case IntLit(i) => IntVal(i)
-      case FloatLit(f) => FloatVal(f)
+      case IntLit(i) => (IntVal(i), env, sto)
+      case FloatLit(f) => (FloatVal(f), env, sto)
   }
 
   def calculateFrac(v: Val, e: AstNode): Val = v match
