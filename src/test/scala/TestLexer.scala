@@ -1,6 +1,6 @@
 import org.scalatest.funsuite.AnyFunSuite
-import cumulus.Parser.Lexer.*
-import cumulus.Parser.Tokens.*
+import cumulus.parser.Lexer.*
+import cumulus.parser.Tokens.*
 
 class TestLexer extends AnyFunSuite {
   test("5 lexes to INT(5)") {

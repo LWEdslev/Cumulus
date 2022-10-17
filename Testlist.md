@@ -22,7 +22,9 @@ LEXER
 - **OK** /* multiline \n \n comment */1 lexes to List()
 
 PARSER
-- None
+- **OK** 5 parses to IntLit(5)
+- **OK** (5) parses to IntLit(5)
+- **OK** 1 + 2 parses to BinOpExp(IntLit(1), PlusBinOp(), IntLit(2))
 
 INTERPRETER
 - None

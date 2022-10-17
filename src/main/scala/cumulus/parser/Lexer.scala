@@ -1,7 +1,7 @@
-package cumulus.Parser
+package cumulus.parser
 
 import cumulus.AST.*
-import cumulus.Parser.Tokens.*
+import cumulus.parser.Tokens.*
 
 import scala.util.matching.Regex
 import scala.util.parsing.combinator.RegexParsers
@@ -166,5 +166,5 @@ object Lexer extends RegexParsers {
 
   private case class SyntheticPosition(line: Int, column: Int, lineContents: String = "") extends Position
 
-  class SyntaxError(pos: Position) extends CumulusError("syntax error", pos)
+  class SyntaxError(pos: Position) extends CumulusError("what you wrote here makes no fucking sense: ", pos)
 }
