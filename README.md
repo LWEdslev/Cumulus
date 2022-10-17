@@ -1,5 +1,5 @@
 # Cumulus ☁️
 An interpreted language implemented in Scala. 
 With exiting features such as:
-- Rounding-error safe numbers 
+- Fraction numbers
 - Insulting error messages
