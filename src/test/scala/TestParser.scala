@@ -21,4 +21,16 @@ class TestParser extends AnyFunSuite {
     val ast = parse(code)
     assert(ast == BinOpExp(IntLit(1), PlusBinOp(), IntLit(2)))
   }
+
+  test("1.2*2 parses to BinOpExp(FloatLit(1.2), MultBinOp(), IntLit(2))") {
+    val code = "1.2*2"
+    val ast = parse(code)
+    assert(ast == BinOpExp(FloatLit(1.2), MultBinOp(), IntLit(2)))
+  }
+
+  test("1.2//2 parses to BinOpExp(FloatLit(1.2), FracBinOp(), IntLit(2))") {
+    val code = "1.2//2"
+    val ast = parse(code)
+    assert(ast == BinOpExp(FloatLit(1.2), FracBinOp(), IntLit(2)))
+  }
 }

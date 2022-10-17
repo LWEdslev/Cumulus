@@ -60,4 +60,6 @@ object Tokens {
   case class DOT() extends CuToken
 
   case class NEW() extends CuToken
+  
+  case class UNDERSCORE() extends CuToken
 }

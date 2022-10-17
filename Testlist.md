@@ -25,9 +25,11 @@ PARSER
 - **OK** 5 parses to IntLit(5)
 - **OK** (5) parses to IntLit(5)
 - **OK** 1 + 2 parses to BinOpExp(IntLit(1), PlusBinOp(), IntLit(2))
+- **OK** 1.2*2 parses to BinOpExp(FloatLit(1.2), PlusBinOp(), IntLit(2))
+- **OK** 1.2//2 parses to BinOpExp(FloatLit(1.2), FracBinOp(), IntLit(2))
 
 INTERPRETER
-- None
+- **OK** 1.2//2 evaluates to FracVal(FloatVal(1.2), IntVal(2))
 
 TYPECHECKER
 - None

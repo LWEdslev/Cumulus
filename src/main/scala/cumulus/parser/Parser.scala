@@ -26,21 +26,29 @@ object Parser extends PackratParsers {
     antiprecedence match
       case x if x >= 0 =>
         binopexp(antiprecedence) |
-        expr(x - 1)
+          expr(x - 1)
       case -1 =>
+        simplify |
         expr(-2)
       case -2 =>
         literal |
-        parens
+          parens
 
   private lazy val parens: PackratParser[Exp] =
     (LEFT_PAREN() ~ expr() ~ RIGHT_PAREN()) ^^ { case _ ~ exp ~ _ => exp }
 
+  private lazy val simplify: PackratParser[Exp] =
+    (OP("_") ~ expr() ~ OP("_")) ^^ { case _ ~ exp ~ _ => UnOpExp(SimplifyOp(), exp)}
+
   private lazy val literal: PackratParser[Lit] =
+    floatlit ^^ { lit => FloatLit(lit.v) } |
     intlit ^^ { lit => IntLit(lit.i) }
 
   private lazy val intlit: PackratParser[INT] =
     accept("int literal", { case lit: INT => lit})
+
+  private lazy val floatlit: PackratParser[FLOAT] =
+    accept("float literal", { case lit: FLOAT => lit })
 
   private def binopexp(antiprecedence: Int): PackratParser[Exp] =
     expr(antiprecedence - 1) * {
@@ -50,7 +58,7 @@ object Parser extends PackratParsers {
   private def binop(antiPrecedence: Int): PackratParser[BinOp] = positioned {
     antiPrecedence match {
       case 0 =>
-        mult | div | modulo
+        mult | frac | div | modulo
       case 1 =>
         plus | minus
       case 2 =>
@@ -63,6 +71,8 @@ object Parser extends PackratParsers {
   private lazy val minus: PackratParser[BinOp] = OP("-") ^^ { _ => MinusBinOp() }
 
   private lazy val mult: PackratParser[BinOp] = OP("*") ^^ { _ => MultBinOp() }
+
+  private lazy val frac: PackratParser[BinOp] = OP("//") ^^ { _ => FracBinOp() }
 
   private lazy val div: PackratParser[BinOp] = OP("/") ^^ { _ => DivBinOp() }
 

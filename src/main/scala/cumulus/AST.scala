@@ -29,8 +29,11 @@ object AST {
 
     sealed abstract class UnOp extends AstNode
       case class NegUnOp() extends UnOp
+      case class SimplifyOp() extends UnOp
 
     case class VarDecl(x: Var, exp: Exp) extends DeclOrExp
+
+
 
   class CumulusError(msg: String, pos: Position = NoPosition)
     extends RuntimeException(if (pos != NoPosition) s"$msg at line ${pos.line} column ${pos.column}" else msg)

@@ -67,7 +67,7 @@ object Lexer extends RegexParsers {
   }
 
   private def literalFloat: Parser[FLOAT] = positioned {
-    """[0-9]+(\.[0-9])+f?""".r ^^ { lit => FLOAT(lit.toFloat) }
+    """[0-9]+(\.[0-9]+)f?""".r ^^ { lit => FLOAT(lit.toFloat) }
   }
 
   private def literalBool: Parser[BOOL] = positioned {
@@ -79,7 +79,7 @@ object Lexer extends RegexParsers {
   }
 
   private def op: Parser[OP] = positioned {
-    """\+|\*|-|//|/|<=|==|<|%|!|\|\||\||&&|&|max""".r ^^ { op => OP(op) }
+    """\+|\*|_|-|//|/|<=|==|<|%|!|\|\||\||&&|&|max""".r ^^ { op => OP(op) }
   }
 
   private def simpleType: Parser[SIMPLE_TYPE] = positioned {
