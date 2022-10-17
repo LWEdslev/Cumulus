@@ -32,6 +32,8 @@ object Parser extends PackratParsers {
         expr(-2)
       case -2 =>
         literal |
+          let |
+          identifier ^^ { id => VarExp(id.str).setPos(id.pos) } |
           parens
 
   private lazy val parens: PackratParser[Exp] =
@@ -49,6 +51,9 @@ object Parser extends PackratParsers {
 
   private lazy val floatlit: PackratParser[FLOAT] =
     accept("float literal", { case lit: FLOAT => lit })
+
+  private lazy val let: PackratParser[Exp] =
+    (LET() ~ identifier ~ EQ() ~ expr()) ^^ { case _ ~ id ~ _ ~ exp => VarDecl(id.str, exp)}
 
   private def binopexp(antiprecedence: Int): PackratParser[Exp] =
     expr(antiprecedence - 1) * {

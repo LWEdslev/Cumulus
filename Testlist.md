@@ -30,6 +30,8 @@ PARSER
 
 INTERPRETER
 - **OK** 1.2//2 evaluates to FracVal(FloatVal(1.2), IntVal(2))
+- **OK** "_1//12345678*12345678_" evaluates to 1
+- **OK** "_1//12345678_*12345678" does not eval to 1
 
 TYPECHECKER
 - None

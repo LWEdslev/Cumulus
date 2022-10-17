@@ -30,8 +30,8 @@ object AST {
     sealed abstract class UnOp extends AstNode
       case class NegUnOp() extends UnOp
       case class SimplifyOp() extends UnOp
-
-    case class VarDecl(x: Var, exp: Exp) extends DeclOrExp
+  
+    case class VarDecl(x: Var, exp: Exp) extends Exp
 
 
 

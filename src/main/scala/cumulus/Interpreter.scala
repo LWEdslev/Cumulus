@@ -6,42 +6,65 @@ import cumulus.parser.Parser
 object Interpreter {
 
   sealed abstract class Val
+
   case class IntVal(v: Int) extends Val
+
   case class FloatVal(v: Float) extends Val
+
   case class FracVal(n: Val, d: Val) extends Val
 
-  def eval(code: String): Val = eval(Parser.parse(code))
+  case class RefVal(loc: Loc) extends Val
 
-  def eval(e: Exp): Val = e match {
-    case VarExp(x) => ???
-    case BinOpExp(left, op, right) => {
-      val leftVal = eval(left)
-      val rightVal = eval(right)
+  type Env = Map[Var, Val]
+  type Sto = Map[Loc, Val]
+  type Loc = Int
+
+  def nextLoc(sto: Sto): Loc = sto.size
+
+  private def makeEnv(): Env = Map[Var, Val]()
+  private def makeSto(): Sto = Map[Loc, Val]()
+
+  def eval(code: String): (Val, Env, Sto) = eval(Parser.parse(code), makeEnv(), makeSto())
+
+  def eval(e: Exp, env: Env, sto: Sto): (Val, Env, Sto) = e match {
+    case VarExp(x) => env(x) match
+      case RefVal(loc) => (sto(loc), env, sto)
+      case _ => (env(x), env, sto)
+    case VarDecl(x, exp) =>
+      val expValue: (Val, Env, Sto) = eval(exp, env, sto)
+      val sto1 = expValue._3
+      val loc: Loc = nextLoc(sto1)
+      val sto2 = sto1 + (loc -> expValue._1)
+      val env1 = env + (x -> RefVal(loc))
+      (expValue._1, env1, sto2)
+    case BinOpExp(left, op, right) =>
+      val (leftVal, env1, sto1) = eval(left, env, sto)
+      val (rightVal, env2, sto2) = eval(right, env1, sto1)
       op match
         case PlusBinOp() =>
           (leftVal, rightVal) match
-            case (IntVal(a), IntVal(b)) => IntVal(a + b)
-            case (FloatVal(a), IntVal(b)) => FloatVal(a + b)
-            case (IntVal(a), FloatVal(b)) => FloatVal(a + b)
-            case (FloatVal(a), FloatVal(b)) => FloatVal(a + b)
+            case (IntVal(a), IntVal(b)) => (IntVal(a + b), env2, sto2)
+            case (FloatVal(a), IntVal(b)) => (FloatVal(a + b), env2, sto2)
+            case (IntVal(a), FloatVal(b)) => (FloatVal(a + b), env2, sto2)
+            case (FloatVal(a), FloatVal(b)) => (FloatVal(a + b), env2, sto2)
             case (f1@FracVal(n1, d1), f2@FracVal(n2, d2)) =>
-              FracVal(
-                eval(BinOpExp(
-                  BinOpExp(getNumerator(f1), MultBinOp(), getDenominator(f2)),
-                  PlusBinOp(),
-                  BinOpExp(getNumerator(f2), MultBinOp(), getDenominator(f1))
-                )), eval(BinOpExp(getDenominator(f1), MultBinOp(), getDenominator(f2)))
-              )
+              val (newNumerator, env3, sto3) = eval(BinOpExp(
+                BinOpExp(getNumerator(f1), MultBinOp(), getDenominator(f2)),
+                PlusBinOp(),
+                BinOpExp(getNumerator(f2), MultBinOp(), getDenominator(f1))
+              ), env2, sto2)
+              val (newDenominator, env4, sto4) = eval(BinOpExp(getDenominator(f1), MultBinOp(), getDenominator(f2)), env3, sto3)
+              (FracVal(newNumerator, newDenominator), env4, sto4)
             case (a, f @ FracVal(n, d)) =>
-              eval(BinOpExp(right, PlusBinOp(), left))
+              eval(BinOpExp(right, PlusBinOp(), left), env2, sto2)
             case (f @ FracVal(_, d), IntVal(b)) =>
-              FracVal(
-                eval(BinOpExp(
-                  getNumerator(f), PlusBinOp(), BinOpExp(IntLit(b), MultBinOp(), getDenominator(f)))), d)
+              val (newNumerator, env3, sto3) = eval(BinOpExp(
+                getNumerator(f), PlusBinOp(), BinOpExp(IntLit(b), MultBinOp(), getDenominator(f))), env2, sto2)
+              (FracVal(newNumerator, d), env3, sto3)
             case (f @ FracVal(_, d), FloatVal(b)) =>
-              FracVal(
-                eval(BinOpExp(
-                  getNumerator(f), PlusBinOp(), BinOpExp(FloatLit(b), MultBinOp(), getDenominator(f)))), d)
+              val (newNumerator, env3, sto3) = eval(BinOpExp(
+                getNumerator(f), PlusBinOp(), BinOpExp(FloatLit(b), MultBinOp(), getDenominator(f))), env2, sto2)
+              (FracVal(newNumerator, d), env3, sto3)
             case _ => ???
         case MinusBinOp() =>
           (leftVal, rightVal) match
@@ -102,7 +125,6 @@ object Interpreter {
         case FracBinOp() => FracVal(leftVal, rightVal)
         case MaxBinOp() => ???
         case ModuloBinOp() => ???
-    }
     case UnOpExp(op, exp) =>
       val value = eval(exp)
       op match

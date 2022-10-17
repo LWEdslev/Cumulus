@@ -10,4 +10,16 @@ class TestInterpreter extends AnyFunSuite {
     val out = eval(code)
     assert(out == FracVal(FloatVal(1.2), IntVal(2)))
   }
+
+  test("\"_1//12345678*12345678_\" evaluates to 1") {
+    val code = "_1//12345678*12345678_"
+    val out = eval(code)
+    assert(out == FloatVal(1))
+  }
+
+  test("\"_1//12345678_*12345678\" does not eval to 1") {
+    val code = "_1//12345678_*12345678"
+    val out = eval(code)
+    assert(out != FloatVal(1))
+  }
 }
