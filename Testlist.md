@@ -30,8 +30,11 @@ PARSER
 
 INTERPRETER
 - **OK** 1.2//2 evaluates to FracVal(FloatVal(1.2), IntVal(2))
-- **OK** "_1//12345678*12345678_" evaluates to 1
-- **OK** "_1//12345678_*12345678" does not eval to 1
+- **OK** \_1//12345678*12345678\_ evaluates to 1
+- **OK** \_1//12345678\_*12345678" does not eval to 1
+- **OK** \_1.2//4//0.25\_ evaluates to 1.2
+- **OK** {let x = 5;let y = 10; x * y} evaluates to 50
+- **OK** {let x = 5;let y = 10; x * y}*2 evaluates to 100
 
 TYPECHECKER
 - None

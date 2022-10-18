@@ -55,7 +55,7 @@ object Lexer extends RegexParsers {
 
 
   private def identifier: Parser[IDENTIFIER] = positioned {
-    "[a-zA-Z_][a-zA-Z0-9_]*".r ^^ { case str if !keywords.contains(str) => IDENTIFIER(str) }
+    "[a-zA-Z][a-zA-Z0-9]*".r ^^ { case str if !keywords.contains(str) => IDENTIFIER(str) }
   }
 
   private def literalString: Parser[STRING] = positioned {

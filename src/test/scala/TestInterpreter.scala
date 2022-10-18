@@ -22,4 +22,22 @@ class TestInterpreter extends AnyFunSuite {
     val out = evalNew(code)._1
     assert(out != FloatVal(1))
   }
+
+  test("\\_1.2//4//0.25\\_ evaluates to 1.2") {
+    val code = "_1.2//4//0.25_"
+    val out = evalNew(code)._1
+    assert(out == FloatVal(1.2))
+  }
+
+  test("{let x = 5;let y = 10; x * y} evaluates to 50") {
+    val code = "{let x = 5;let y = 10; x * y}"
+    val out = evalNew(code)._1
+    assert(out == IntVal(50))
+  }
+
+  test("{let x = 5;let y = 10; x * y}*2 evaluates to 100") {
+    val code = "{let x = 5;let y = 10; x * y}*2"
+    val out = evalNew(code)._1
+    assert(out == IntVal(100))
+  }
 }

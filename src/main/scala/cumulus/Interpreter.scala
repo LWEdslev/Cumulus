@@ -3,6 +3,8 @@ package cumulus
 import cumulus.AST.*
 import cumulus.parser.Parser
 
+import scala.annotation.tailrec
+
 object Interpreter {
 
   sealed abstract class Val
@@ -14,6 +16,10 @@ object Interpreter {
   case class FracVal(n: Val, d: Val) extends Val
 
   case class RefVal(loc: Loc) extends Val
+
+  case class FunVal(params: List[Var], exp: Exp, env: Env, sto: Sto) extends Val
+
+  case class UnitVal() extends Val
 
   type Env = Map[Var, Val]
   type Sto = Map[Loc, Val]
@@ -37,6 +43,22 @@ object Interpreter {
       val sto2 = sto1 + (loc -> expValue._1)
       val env1 = env + (x -> RefVal(loc))
       (expValue._1, env1, sto2)
+    case FunDecl(id: Var, params: List[Var], exp: Exp) =>
+      (UnitVal(), env + (id -> FunVal(params, exp, env, sto)), sto)
+    case FunExp(id: Var, args: List[Exp]) => env(id) match
+      case FunVal(params, exp, env, sto) => {
+        if (params.length != args.length)
+          throw InterpreterError(s"there are ${params.length} parameters and ${args.length}, you dumb fuck", e)
+        var env1 = env
+        var sto1 = sto
+        for (a <- args.zip(params)) {
+          val (argVal, env2, sto2) = eval(a._1, env1, sto1)
+          env1 = env2 + (a._2 -> argVal)
+          sto1 = sto2
+        }
+        eval(exp, env1, sto1)
+      }
+      case _ => throw InterpreterError(s"$id is not defined as a function, but who would expect you to understand", e)
     case BinOpExp(left, op, right) =>
       val (leftVal, env1, sto1) = eval(left, env, sto)
       val (rightVal, env2, sto2) = eval(right, env1, sto1)
@@ -150,11 +172,26 @@ object Interpreter {
               (FracVal(newNumerator, d), env2, sto2)
             case _ => throw InterpreterError(s"trying to negate $value, which makes no sense", e)
         case SimplifyOp() => (calculateFrac(value, e), env1, sto1)
-    case BlockExp(vars, exp) => ???
+    case BlockExp(vars, exp) =>
+      var env1 = env
+      var sto1 = sto
+      for (v <- vars) {
+        val value = eval(v, env1, sto1)
+        env1 = value._2
+        sto1 = value._3
+      }
+      eval(exp, env1, sto1)
     case lit: Lit => lit match
       case IntLit(i) => (IntVal(i), env, sto)
       case FloatLit(f) => (FloatVal(f), env, sto)
   }
+
+  @tailrec
+  def evalPretty(code: String): String = evalNew(code)._1 match
+    case IntVal(v) => v.toString
+    case FloatVal(v) => v.toString
+    case FracVal(n, d) => evalPretty(s"_$code _")
+    case _ => ???
 
   def calculateFrac(v: Val, e: AstNode): Val = v match
     case f: FracVal => f match
@@ -195,6 +232,7 @@ object Interpreter {
           case _ => throw Error("Unreachable")
     case v: Val => v
 
+  @tailrec
   private def getNumerator(f: FracVal): Exp = f match
     case FracVal(n, d) => n match
       case i: IntVal => IntLit(i.v)
@@ -208,5 +246,6 @@ object Interpreter {
       case f: FloatVal => FloatLit(f.v)
       case frac: FracVal => BinOpExp(getNumerator(f), FracBinOp(), getDenominator(f))
       case _ => ???
+
   class InterpreterError(msg: String, node: AstNode) extends CumulusError(s"you can't even program: $msg", node.pos)
 }

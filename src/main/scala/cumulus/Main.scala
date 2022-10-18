@@ -7,7 +7,10 @@ import cumulus.Interpreter._
 
 object Main {
   def main(args: Array[String]): Unit = {
-    val code = "let x = 5"
+    val code =
+      """
+            {fun f(x) = 10*x; f(2)}
+      """
     val tokens = apply(code)
     println(tokens)
     val ast = parse(code)

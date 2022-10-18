@@ -29,12 +29,31 @@ object Parser extends PackratParsers {
           expr(x - 1)
       case -1 =>
         simplify |
-        expr(-2)
+          funexp |
+          expr(-2)
       case -2 =>
         literal |
-          let |
           identifier ^^ { id => VarExp(id.str).setPos(id.pos) } |
+          block |
           parens
+
+  private lazy val block: PackratParser[Exp] =
+    (LEFT_BRACE() ~ blockelmseq ~ expr() ~ RIGHT_BRACE())
+      ^^ { case _ ~ d ~ e ~ _ => BlockExp(d, e)}
+
+  private lazy val blockel: PackratParser[Decl] = let | fundecl
+
+  private lazy val blockelmseq: PackratParser[List[Decl]] = rep { blockel ~ SEMICOLON() } ^^ (_.map(_._1))
+
+  private lazy val fundecl: PackratParser[Decl] =
+    (FUN() ~ identifier ~ LEFT_PAREN() ~ identifier ~ paramseq ~ RIGHT_PAREN() ~ EQ() ~ expr())
+     ^^ { case _ ~ f ~ _ ~ firstParam ~ params ~ _ ~ _ ~ exp => FunDecl(f.str, List(firstParam.str) ++ params, exp)}
+
+  private def paramseq: PackratParser[List[Var]] = rep { COMMA() ~ identifier } ^^ (_.map(_._2.str))
+
+  private lazy val funexp: PackratParser[Exp] =
+    (identifier ~ LEFT_PAREN() ~ expr() ~ RIGHT_PAREN())
+     ^^ { case id ~ _ ~  exp ~ _ => FunExp(id.str, List(exp))}
 
   private lazy val parens: PackratParser[Exp] =
     (LEFT_PAREN() ~ expr() ~ RIGHT_PAREN()) ^^ { case _ ~ exp ~ _ => exp }
@@ -42,7 +61,7 @@ object Parser extends PackratParsers {
   private lazy val simplify: PackratParser[Exp] =
     (OP("_") ~ expr() ~ OP("_")) ^^ { case _ ~ exp ~ _ => UnOpExp(SimplifyOp(), exp)}
 
-  private lazy val literal: PackratParser[Lit] =
+  private lazy val literal: PackratParser[Exp] =
     floatlit ^^ { lit => FloatLit(lit.v) } |
     intlit ^^ { lit => IntLit(lit.i) }
 
@@ -52,7 +71,7 @@ object Parser extends PackratParsers {
   private lazy val floatlit: PackratParser[FLOAT] =
     accept("float literal", { case lit: FLOAT => lit })
 
-  private lazy val let: PackratParser[Exp] =
+  private lazy val let: PackratParser[Decl] =
     (LET() ~ identifier ~ EQ() ~ expr()) ^^ { case _ ~ id ~ _ ~ exp => VarDecl(id.str, exp)}
 
   private def binopexp(antiprecedence: Int): PackratParser[Exp] =
