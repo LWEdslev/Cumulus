@@ -79,7 +79,7 @@ object Lexer extends RegexParsers {
   }
 
   private def op: Parser[OP] = positioned {
-    """\+|\*|_|-|//|/|<=|==|<|%|!|\|\||\||&&|&|max""".r ^^ { op => OP(op) }
+    """\+|\*|_|-|//|/|==|<=|>=|>|<|%|!|\|\||\||&&|&|max""".r ^^ { op => OP(op) }
   }
 
   private def simpleType: Parser[SIMPLE_TYPE] = positioned {

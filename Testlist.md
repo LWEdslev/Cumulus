@@ -35,6 +35,3 @@ INTERPRETER
 - **OK** \_1.2//4//0.25\_ evaluates to 1.2
 - **OK** {let x = 5;let y = 10; x * y} evaluates to 50
 - **OK** {let x = 5;let y = 10; x * y}*2 evaluates to 100
-
-TYPECHECKER
-- None

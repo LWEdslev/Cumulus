@@ -28,11 +28,12 @@ object Parser extends PackratParsers {
         binopexp(antiprecedence) |
           expr(x - 1)
       case -1 =>
-        simplify |
-          funexp |
+        unopexp |
+          simplify |
           expr(-2)
       case -2 =>
         literal |
+          funexp |
           identifier ^^ { id => VarExp(id.str).setPos(id.pos) } |
           block |
           parens
@@ -63,13 +64,17 @@ object Parser extends PackratParsers {
 
   private lazy val literal: PackratParser[Exp] =
     floatlit ^^ { lit => FloatLit(lit.v) } |
-    intlit ^^ { lit => IntLit(lit.i) }
+    intlit ^^ { lit => IntLit(lit.i) } |
+      boolLit ^^ { lit => BoolLit(lit.b)}
 
   private lazy val intlit: PackratParser[INT] =
     accept("int literal", { case lit: INT => lit})
 
   private lazy val floatlit: PackratParser[FLOAT] =
     accept("float literal", { case lit: FLOAT => lit })
+
+  private lazy val boolLit: PackratParser[BOOL] =
+    accept("bool literal", { case lit: BOOL => lit })
 
   private lazy val let: PackratParser[Decl] =
     (LET() ~ identifier ~ EQ() ~ expr()) ^^ { case _ ~ id ~ _ ~ exp => VarDecl(id.str, exp)}
@@ -86,8 +91,16 @@ object Parser extends PackratParsers {
       case 1 =>
         plus | minus
       case 2 =>
-        max
+        max | equality | geq | leq | greater | less | or | and
     }
+  }
+
+  private lazy val unopexp: PackratParser[Exp] = positioned {
+    (unop ~ expr(-1)) ^^ { case op ~ exp => UnOpExp(op, exp)}
+  }
+
+  private lazy val unop: PackratParser[UnOp] = positioned {
+    neg | not
   }
 
   private lazy val plus: PackratParser[BinOp] = OP("+") ^^ { _ => PlusBinOp() }
@@ -104,7 +117,24 @@ object Parser extends PackratParsers {
 
   private lazy val modulo: PackratParser[BinOp] = OP("%") ^^ { _ => ModuloBinOp() }
 
+  private lazy val equality: PackratParser[BinOp] = OP("==") ^^ { _ => EqualityBinOp() }
+
+  private lazy val greater: PackratParser[BinOp] = OP(">") ^^ { _ => GreaterBinOp() }
+
+  private lazy val geq: PackratParser[BinOp] = OP(">=") ^^ { _ => GreaterOrEqualBinOp() }
+
+  private lazy val leq: PackratParser[BinOp] = OP("<=") ^^ { _ => LessOrEqualBinOp() }
+
+  private lazy val less: PackratParser[BinOp] = OP("<") ^^ { _ => LessBinOp()}
+
   private lazy val neg: PackratParser[UnOp] = OP("-") ^^ { _ => NegUnOp() }
+
+  private lazy val not: PackratParser[UnOp] = OP("!") ^^ { _ => NotUnOp() }
+
+  private lazy val or: PackratParser[BinOp] = OP("|") ^^ { _ => OrBinOp() }
+
+  private lazy val and: PackratParser[BinOp] = OP("&") ^^ { _ => AndBinOp() }
+
 
   private lazy val identifier: PackratParser[IDENTIFIER] =
     accept("identifier", { case id: IDENTIFIER => id })

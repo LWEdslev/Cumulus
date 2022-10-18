@@ -9,7 +9,7 @@ object Main {
   def main(args: Array[String]): Unit = {
     val code =
       """
-            {fun f(x) = 10*x; f(2)}
+          (true & false) | true
       """
     val tokens = apply(code)
     println(tokens)

@@ -13,6 +13,8 @@ object Interpreter {
 
   case class FloatVal(v: Float) extends Val
 
+  case class BoolVal(b: Boolean) extends Val
+
   case class FracVal(n: Val, d: Val) extends Val
 
   case class RefVal(loc: Loc) extends Val
@@ -160,6 +162,49 @@ object Interpreter {
             case (IntVal(a), FloatVal(b)) => (FloatVal(a % b), env2, sto2)
             case (FloatVal(a), FloatVal(b)) => (FloatVal(a % b), env2, sto2)
             case _ => throw InterpreterError(s"$left modulo by $right?? you dumb fuck", e)
+        case EqualityBinOp() =>
+          (leftVal, rightVal) match
+            case (IntVal(a), IntVal(b)) => (BoolVal(a == b), env2, sto2)
+            case (FloatVal(a), FloatVal(b)) => (BoolVal(a == b), env2, sto2)
+            case (FloatVal(a), IntVal(b)) => (BoolVal(a == b), env2, sto2)
+            case (IntVal(a), FloatVal(b)) => (BoolVal(a == b), env2, sto2)
+            case _ => throw InterpreterError(s"you can't compare $leftVal with $rightVal, why did you think that you could", e)
+        case GreaterBinOp() =>
+          (leftVal, rightVal) match
+            case (IntVal(a), IntVal(b)) => (BoolVal(a > b), env2, sto2)
+            case (FloatVal(a), FloatVal(b)) => (BoolVal(a > b), env2, sto2)
+            case (FloatVal(a), IntVal(b)) => (BoolVal(a > b), env2, sto2)
+            case (IntVal(a), FloatVal(b)) => (BoolVal(a > b), env2, sto2)
+            case _ => throw InterpreterError(s"you can't compare $leftVal with $rightVal, why did you think that you could", e)
+        case LessBinOp() =>
+          (leftVal, rightVal) match
+            case (IntVal(a), IntVal(b)) => (BoolVal(a < b), env2, sto2)
+            case (FloatVal(a), FloatVal(b)) => (BoolVal(a < b), env2, sto2)
+            case (FloatVal(a), IntVal(b)) => (BoolVal(a < b), env2, sto2)
+            case (IntVal(a), FloatVal(b)) => (BoolVal(a < b), env2, sto2)
+            case _ => throw InterpreterError(s"you can't compare $leftVal with $rightVal, why did you think that you could", e)
+        case GreaterOrEqualBinOp() =>
+          (leftVal, rightVal) match
+            case (IntVal(a), IntVal(b)) => (BoolVal(a >= b), env2, sto2)
+            case (FloatVal(a), FloatVal(b)) => (BoolVal(a >= b), env2, sto2)
+            case (FloatVal(a), IntVal(b)) => (BoolVal(a >= b), env2, sto2)
+            case (IntVal(a), FloatVal(b)) => (BoolVal(a >= b), env2, sto2)
+            case _ => throw InterpreterError(s"you can't compare $leftVal with $rightVal, why did you think that you could", e)
+        case LessOrEqualBinOp() =>
+          (leftVal, rightVal) match
+            case (IntVal(a), IntVal(b)) => (BoolVal(a <= b), env2, sto2)
+            case (FloatVal(a), FloatVal(b)) => (BoolVal(a <= b), env2, sto2)
+            case (FloatVal(a), IntVal(b)) => (BoolVal(a <= b), env2, sto2)
+            case (IntVal(a), FloatVal(b)) => (BoolVal(a <= b), env2, sto2)
+            case _ => throw InterpreterError(s"you can't compare $leftVal with $rightVal, why did you think that you could", e)
+        case OrBinOp() =>
+          (leftVal, rightVal) match
+            case (BoolVal(a), BoolVal(b)) => (BoolVal(a || b), env2, sto2)
+            case _ => throw InterpreterError(s"you can't compare $leftVal with $rightVal, why did you think that you could", e)
+        case AndBinOp() =>
+          (leftVal, rightVal) match
+            case (BoolVal(a), BoolVal(b)) => (BoolVal(a && b), env2, sto2)
+            case _ => throw InterpreterError(s"you can't compare $leftVal with $rightVal, why did you think that you could", e)
     case UnOpExp(op, exp) =>
       val (value, env1, sto1) = eval(exp, env, sto)
       op match
@@ -172,6 +217,10 @@ object Interpreter {
               (FracVal(newNumerator, d), env2, sto2)
             case _ => throw InterpreterError(s"trying to negate $value, which makes no sense", e)
         case SimplifyOp() => (calculateFrac(value, e), env1, sto1)
+        case NotUnOp() =>
+          value match
+            case BoolVal(b) => (BoolVal(!b), env1, sto1)
+            case _ => throw InterpreterError(s"trying to negate $value, which makes no sense", e)
     case BlockExp(vars, exp) =>
       var env1 = env
       var sto1 = sto
@@ -184,12 +233,14 @@ object Interpreter {
     case lit: Lit => lit match
       case IntLit(i) => (IntVal(i), env, sto)
       case FloatLit(f) => (FloatVal(f), env, sto)
+      case BoolLit(b) => (BoolVal(b), env, sto)
   }
 
   @tailrec
   def evalPretty(code: String): String = evalNew(code)._1 match
     case IntVal(v) => v.toString
     case FloatVal(v) => v.toString
+    case BoolVal(b) => b.toString
     case FracVal(n, d) => evalPretty(s"_$code _")
     case _ => ???
 

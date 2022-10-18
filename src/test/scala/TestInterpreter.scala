@@ -40,4 +40,10 @@ class TestInterpreter extends AnyFunSuite {
     val out = evalNew(code)._1
     assert(out == IntVal(100))
   }
+
+  test("{fun f(x) = 10*x; f(2)} evaluates to 20") {
+    val code = "{fun f(x) = 10*x; f(2)}"
+    val out = evalNew(code)._1
+    assert(out == IntVal(20))
+  }
 }

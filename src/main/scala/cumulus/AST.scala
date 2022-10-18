@@ -16,6 +16,7 @@ object AST {
   sealed abstract class Lit extends Exp
   case class IntLit(i: Int) extends Lit
   case class FloatLit(f: Float) extends Lit
+  case class BoolLit(b: Boolean) extends Lit
 
   sealed abstract class BinOp extends AstNode
   case class PlusBinOp() extends BinOp
@@ -25,9 +26,17 @@ object AST {
   case class FracBinOp() extends BinOp
   case class MaxBinOp() extends BinOp
   case class ModuloBinOp() extends BinOp
+  case class EqualityBinOp() extends BinOp
+  case class GreaterBinOp() extends BinOp
+  case class LessBinOp() extends BinOp
+  case class GreaterOrEqualBinOp() extends BinOp
+  case class LessOrEqualBinOp() extends BinOp
+  case class AndBinOp() extends BinOp
+  case class OrBinOp() extends BinOp
 
   sealed abstract class UnOp extends AstNode
   case class NegUnOp() extends UnOp
+  case class NotUnOp() extends UnOp
   case class SimplifyOp() extends UnOp
 
   sealed abstract class Decl extends Exp

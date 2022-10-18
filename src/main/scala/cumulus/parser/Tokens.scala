@@ -42,6 +42,18 @@ object Tokens {
   case class RIGHT_BRACE() extends CuToken
 
   case class EQ() extends CuToken
+  
+  case class GREATER() extends CuToken
+  
+  case class LESS() extends CuToken
+  
+  case class GEQ() extends CuToken
+  
+  case class LEQ() extends CuToken
+  
+  case class AND() extends CuToken
+  
+  case class OR() extends CuToken
 
   case class COLON() extends CuToken
 
