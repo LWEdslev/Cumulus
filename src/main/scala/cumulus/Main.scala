@@ -9,13 +9,13 @@ object Main {
   def main(args: Array[String]): Unit = {
     val code =
       """
-          {let x = 1 ; loop if(x < 10) {x = x + 1}; x}
+          {let hello = "Hello"; let space = " "+3.1415926 ; let world = "world"+1 ; hello + space + world}
       """
     val tokens = apply(code)
     println(tokens)
     val ast = parse(code)
     println(ast)
-    val out = evalNew(code)
+    val out = evalPretty(code)
     println(out)
   }
 }

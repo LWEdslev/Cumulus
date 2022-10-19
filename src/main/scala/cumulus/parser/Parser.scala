@@ -70,8 +70,8 @@ object Parser extends PackratParsers {
   private lazy val literal: PackratParser[Exp] =
     floatlit ^^ { lit => FloatLit(lit.v) } |
     intlit ^^ { lit => IntLit(lit.i) } |
-      boolLit ^^ { lit => BoolLit(lit.b)}
-
+    boolLit ^^ { lit => BoolLit(lit.b)} |
+      stringlit ^^ { lit => StringLit(lit.str)}
   private lazy val intlit: PackratParser[INT] =
     accept("int literal", { case lit: INT => lit})
 
@@ -80,6 +80,9 @@ object Parser extends PackratParsers {
 
   private lazy val boolLit: PackratParser[BOOL] =
     accept("bool literal", { case lit: BOOL => lit })
+
+  private lazy val stringlit: PackratParser[STRING] =
+    accept("string literal", { case lit: STRING => lit })
 
   private lazy val let: PackratParser[Decl] =
     (LET() ~ identifier ~ EQ() ~ expr()) ^^ { case _ ~ id ~ _ ~ exp => VarDecl(id.str, exp)}

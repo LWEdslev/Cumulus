@@ -10,17 +10,12 @@ object Interpreter {
   sealed abstract class Val
 
   case class IntVal(v: Int) extends Val
-
   case class FloatVal(v: Float) extends Val
-
   case class BoolVal(b: Boolean) extends Val
-
+  case class StringVal(s: String) extends Val
   case class FracVal(n: Val, d: Val) extends Val
-
   case class RefVal(loc: Loc) extends Val
-
   case class FunVal(params: List[Var], exp: Exp, env: Env, sto: Sto) extends Val
-
   case class UnitVal() extends Val
 
   type Env = Map[Var, Val]
@@ -114,6 +109,11 @@ object Interpreter {
       op match
         case PlusBinOp() =>
           (leftVal, rightVal) match
+            case (StringVal(a), IntVal(b)) => (StringVal(a+b.toString), env2, sto2)
+            case (IntVal(a), StringVal(b)) => (StringVal(a.toString+b), env2, sto2)
+            case (StringVal(a), FloatVal(b)) => (StringVal(a + b.toString), env2, sto2)
+            case (FloatVal(a), StringVal(b)) => (StringVal(a.toString + b), env2, sto2)
+            case (StringVal(a), StringVal(b)) => (StringVal(a + b), env2, sto2)
             case (IntVal(a), IntVal(b)) => (IntVal(a + b), env2, sto2)
             case (FloatVal(a), IntVal(b)) => (FloatVal(a + b), env2, sto2)
             case (IntVal(a), FloatVal(b)) => (FloatVal(a + b), env2, sto2)
@@ -169,8 +169,6 @@ object Interpreter {
             case (FloatVal(a), IntVal(b)) => (FloatVal(a * b), env2, sto2)
             case (IntVal(a), FloatVal(b)) => (FloatVal(a * b), env2, sto2)
             case (FloatVal(a), FloatVal(b)) => (FloatVal(a * b), env2, sto2)
-            case (_, FracVal(_, _)) =>
-              eval(BinOpExp(right, MultBinOp(), left), env2, sto2)
             case (f1@FracVal(_, _), f2@FracVal(_, _)) =>
               val (newNumerator, env3, sto3) = eval(BinOpExp(
                 getNumerator(f1), MultBinOp(), getNumerator(f2)
@@ -185,6 +183,8 @@ object Interpreter {
               val (newNumerator, env3, sto3) = eval(BinOpExp(
                 getNumerator(f), MultBinOp(), FloatLit(b)), env2, sto2)
               (FracVal(newNumerator, d), env3, sto3)
+            case (_, FracVal(_, _)) =>
+              eval(BinOpExp(right, MultBinOp(), left), env2, sto2)
             case _ => throw InterpreterError(s"$left times $right, just no...", e)
         case DivBinOp() =>
           if (rightVal == IntVal(0)) throw InterpreterError(s"you can't even math, trying to divide by zero", e)
@@ -201,6 +201,7 @@ object Interpreter {
             case (FloatVal(a), IntVal(b)) => (FloatVal(if (a > b) a else b), env2, sto2)
             case (IntVal(a), FloatVal(b)) => (FloatVal(if (a > b) a else b), env2, sto2)
             case (FloatVal(a), FloatVal(b)) => (FloatVal(if (a > b) a else b), env2, sto2)
+            case _ => throw InterpreterError(s"$left max of $right?? you dumb fuck", e)
         case ModuloBinOp() =>
           if (rightVal == IntVal(0)) throw InterpreterError(s"you can't even math, trying to modulo by zero", e)
           (leftVal, rightVal) match
@@ -281,6 +282,7 @@ object Interpreter {
       case IntLit(i) => (IntVal(i), env, sto)
       case FloatLit(f) => (FloatVal(f), env, sto)
       case BoolLit(b) => (BoolVal(b), env, sto)
+      case StringLit(str) => (StringVal(str), env, sto)
   }
 
   @tailrec
@@ -288,6 +290,7 @@ object Interpreter {
     case IntVal(v) => v.toString
     case FloatVal(v) => v.toString
     case BoolVal(b) => b.toString
+    case StringVal(s) => s
     case FracVal(_, _) => evalPretty(s"_$code _")
     case _ => throw new Error(s"the output can not be printed")
 
