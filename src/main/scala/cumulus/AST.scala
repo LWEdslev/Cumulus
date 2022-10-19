@@ -13,6 +13,8 @@ object AST {
   case class BinOpExp(left: Exp, op: BinOp, right: Exp) extends Exp
   case class UnOpExp(op: UnOp, exp: Exp) extends Exp
   case class BlockExp(vars: List[Decl], exp: Exp) extends Exp
+  case class IfElseExp(cond: Exp, ifTrue: Exp, ifFalse: Exp) extends Exp
+  case class UnitExp() extends Exp
   sealed abstract class Lit extends Exp
   case class IntLit(i: Int) extends Lit
   case class FloatLit(f: Float) extends Lit
@@ -42,7 +44,9 @@ object AST {
   sealed abstract class Decl extends Exp
   case class VarDecl(x: Var, exp: Exp) extends Decl
   case class FunDecl(id: Var, params: List[Var], exp: Exp) extends Decl
-
+  case class AssignExp(id: Var, exp: Exp) extends Decl
+  case class LoopExp(times: Exp, exp: Exp) extends Decl
+  case class LoopIfExp(cond: Exp, exp: Exp) extends Decl
 
 
   class CumulusError(msg: String, pos: Position = NoPosition)

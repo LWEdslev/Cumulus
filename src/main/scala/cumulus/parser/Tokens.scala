@@ -27,7 +27,7 @@ object Tokens {
 
   case class DO() extends CuToken
 
-  case class WWHILE() extends CuToken
+  case class LOOP() extends CuToken
 
   case class IFF() extends CuToken
 
@@ -72,6 +72,8 @@ object Tokens {
   case class DOT() extends CuToken
 
   case class NEW() extends CuToken
+  
+  case class UNIT() extends CuToken
   
   case class UNDERSCORE() extends CuToken
 }

@@ -98,13 +98,7 @@ class TestLexer extends AnyFunSuite {
     val tokens = apply(code)
     assert(tokens == List(LET(),FUN(),NULL()))
   }
-
-  test("while if else (){}=:,; gives correct tokens") {
-    val code = "while if else (){}=:,;"
-    val tokens = apply(code)
-    assert(tokens == List(WWHILE(),IFF(),EELSE(),LEFT_PAREN(),RIGHT_PAREN(),LEFT_BRACE(),RIGHT_BRACE(),EQ(),COLON(),COMMA(),SEMICOLON()))
-  }
-
+  
   test("=>match case class .new gives correct tokens") {
     val code = "=>match case class .new"
     val tokens = apply(code)

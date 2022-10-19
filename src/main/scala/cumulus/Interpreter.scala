@@ -35,6 +35,53 @@ object Interpreter {
   def evalNew(code: String): (Val, Env, Sto) = eval(Parser.parse(code), makeEnv(), makeSto())
 
   def eval(e: Exp, env: Env, sto: Sto): (Val, Env, Sto) = e match {
+    case UnitExp() => (UnitVal(), env, sto)
+    case IfElseExp(cond, ifTrue, ifFalse) =>
+      val (evalCond, env1, sto1) = eval(cond, env, sto)
+      evalCond match
+        case BoolVal(true) => eval(ifTrue, env1, sto1)
+        case BoolVal(false) => eval(ifFalse, env1, sto1)
+        case _ => throw InterpreterError(s"$cond does not evaluate to a boolean, idiot", e)
+    case AssignExp(id, exp) =>
+      if (env.contains(id)) {
+        env(id) match
+          case RefVal(loc) =>
+            val (newVal, env1, sto1) = eval(exp, env, sto)
+            (UnitVal(), env1, sto1 + (loc -> newVal))
+          case _ => throw InterpreterError(s"are you mad? $id is not mutable", e)
+      } else {
+        throw InterpreterError(s"what made you think that you could re-assign $id?", e)
+      }
+    case LoopExp(times, exp) =>
+      val (valTimes, env1, sto1) = eval(times, env, sto)
+      valTimes match
+        case IntVal(v) =>
+          var env2 = env1
+          var sto2 = sto1
+          for (i <- 0 until v) {
+            val (_, env3, sto3) = eval(exp, env2, sto2)
+            env2 = env3
+            sto2 = sto3
+          }
+          (UnitVal(), env2, sto2)
+        case FloatVal(v) =>
+          var env2 = env1
+          var sto2 = sto1
+          for (i <- 0 until v.toInt) {
+            val (_, env3, sto3) = eval(exp, env2, sto2)
+            env2 = env3
+            sto2 = sto3
+          }
+          (UnitVal(), env2, sto2)
+        case _ => throw InterpreterError(s"$times must be a float or int", e)
+    case LoopIfExp(cond, exp) =>
+      val (valCond, env1, sto1) = eval(cond, env, sto)
+      valCond match
+        case BoolVal(true) =>
+          val (_, env2, sto2) = eval(exp, env1, sto1)
+          eval(LoopIfExp(cond, exp), env2, sto2)
+        case BoolVal(false) => (UnitVal() , env1, sto1)
+        case _ => throw InterpreterError(s"$cond does not evaluate to a boolean", e)
     case VarExp(x) => env(x) match
       case RefVal(loc) => (sto(loc), env, sto)
       case _ => (env(x), env, sto)
@@ -44,7 +91,7 @@ object Interpreter {
       val loc: Loc = nextLoc(sto1)
       val sto2 = sto1 + (loc -> expValue._1)
       val env1 = env + (x -> RefVal(loc))
-      (expValue._1, env1, sto2)
+      (UnitVal(), env1, sto2)
     case FunDecl(id: Var, params: List[Var], exp: Exp) =>
       (UnitVal(), env + (id -> FunVal(params, exp, env, sto)), sto)
     case FunExp(id: Var, args: List[Exp]) => env(id) match
@@ -241,8 +288,8 @@ object Interpreter {
     case IntVal(v) => v.toString
     case FloatVal(v) => v.toString
     case BoolVal(b) => b.toString
-    case FracVal(n, d) => evalPretty(s"_$code _")
-    case _ => ???
+    case FracVal(_, _) => evalPretty(s"_$code _")
+    case _ => throw new Error(s"the output can not be printed")
 
   def calculateFrac(v: Val, e: AstNode): Val = v match
     case f: FracVal => f match
@@ -281,6 +328,7 @@ object Interpreter {
             val denominator = calculateFrac(d, e)
             calculateFrac(FracVal(n, denominator), e)
           case _ => throw Error("Unreachable")
+      case _ => throw Error("this should be unreachable")
     case v: Val => v
 
   @tailrec
@@ -289,14 +337,14 @@ object Interpreter {
       case i: IntVal => IntLit(i.v)
       case f: FloatVal => FloatLit(f.v)
       case frac: FracVal => getNumerator(frac)
-      case _ => ???
+      case _ => throw Error("this should be unreachable")
 
   private def getDenominator(f: FracVal): Exp = f match
     case FracVal(n, d) => d match
       case i: IntVal => IntLit(i.v)
       case f: FloatVal => FloatLit(f.v)
       case frac: FracVal => BinOpExp(getNumerator(f), FracBinOp(), getDenominator(f))
-      case _ => ???
+      case _ => throw Error("this should be unreachable")
 
   class InterpreterError(msg: String, node: AstNode) extends CumulusError(s"you can't even program: $msg", node.pos)
 }

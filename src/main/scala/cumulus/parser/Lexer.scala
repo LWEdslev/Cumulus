@@ -35,7 +35,7 @@ object Lexer extends RegexParsers {
           right_paren |
           left_brace |
           right_brace |
-          wwhile |
+          loop |
           arrow |
           eq |
           colon |
@@ -94,8 +94,8 @@ object Lexer extends RegexParsers {
     """fun\b""".r ^^ { _ => FUN() }
   }
 
-  private def wwhile: Parser[WWHILE] = positioned {
-    """while\b""".r ^^ { _ => WWHILE() }
+  private def loop: Parser[LOOP] = positioned {
+    """loop\b""".r ^^ { _ => LOOP() }
   }
 
   private def iff: Parser[IFF] = positioned {

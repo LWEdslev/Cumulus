@@ -33,8 +33,10 @@ object Parser extends PackratParsers {
           expr(-2)
       case -2 =>
         literal |
+          ifelseexp |
           funexp |
           identifier ^^ { id => VarExp(id.str).setPos(id.pos) } |
+          unitblock |
           block |
           parens
 
@@ -42,7 +44,10 @@ object Parser extends PackratParsers {
     (LEFT_BRACE() ~ blockelmseq ~ expr() ~ RIGHT_BRACE())
       ^^ { case _ ~ d ~ e ~ _ => BlockExp(d, e)}
 
-  private lazy val blockel: PackratParser[Decl] = let | fundecl
+  private lazy val unitblock: PackratParser[Exp] =
+    (LEFT_BRACE() ~ blockelmseq ~ blockel ~ RIGHT_BRACE()) ^^ { case _ ~ ds ~ d ~ _ => BlockExp(ds :+ d, UnitExp()) }
+
+  private lazy val blockel: PackratParser[Decl] = let | fundecl | assign | loopifexp | loopexp
 
   private lazy val blockelmseq: PackratParser[List[Decl]] = rep { blockel ~ SEMICOLON() } ^^ (_.map(_._1))
 
@@ -79,6 +84,9 @@ object Parser extends PackratParsers {
   private lazy val let: PackratParser[Decl] =
     (LET() ~ identifier ~ EQ() ~ expr()) ^^ { case _ ~ id ~ _ ~ exp => VarDecl(id.str, exp)}
 
+  private lazy val assign: PackratParser[Decl] =
+    (identifier ~ EQ() ~ expr()) ^^ { case id ~ _ ~ exp => AssignExp(id.str, exp)}
+
   private def binopexp(antiprecedence: Int): PackratParser[Exp] =
     expr(antiprecedence - 1) * {
       binop(antiprecedence) ^^ { op => { (left: Exp, right: Exp) => BinOpExp(left, op, right).setPos(left.pos) }}
@@ -101,6 +109,21 @@ object Parser extends PackratParsers {
 
   private lazy val unop: PackratParser[UnOp] = positioned {
     neg | not
+  }
+
+  private lazy val ifelseexp: PackratParser[Exp] = positioned {
+    (IFF() ~ LEFT_PAREN() ~ expr() ~ RIGHT_PAREN() ~ LEFT_BRACE() ~ expr() ~ RIGHT_BRACE() ~ EELSE() ~ LEFT_BRACE() ~ expr() ~ RIGHT_BRACE())
+      ^^ { case _ ~ _ ~ cond ~ _ ~ _ ~ iftrue ~ _ ~ _ ~ _ ~ iffalse ~ _ => IfElseExp(cond, iftrue, iffalse)}
+  }
+
+  private lazy val loopexp: PackratParser[Decl] = positioned {
+    (LOOP() ~ LEFT_PAREN() ~ expr() ~ RIGHT_PAREN() ~ unitblock)
+      ^^ { case _ ~ _ ~ times ~ _ ~ exp => LoopExp(times, exp) }
+  }
+
+  private lazy val loopifexp: PackratParser[Decl] = positioned {
+    (LOOP() ~ IFF() ~ LEFT_PAREN() ~ expr() ~ RIGHT_PAREN() ~ unitblock)
+      ^^ { case _ ~ _ ~ _ ~ cond ~ _ ~ exp => LoopIfExp(cond, exp) }
   }
 
   private lazy val plus: PackratParser[BinOp] = OP("+") ^^ { _ => PlusBinOp() }
