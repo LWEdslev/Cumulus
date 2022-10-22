@@ -20,6 +20,7 @@ object AST {
   case class FloatLit(f: Float) extends Lit
   case class BoolLit(b: Boolean) extends Lit
   case class StringLit(str: String) extends Lit
+  case class ListLit(list: List[Exp]) extends Lit
 
   sealed abstract class BinOp extends AstNode
   case class PlusBinOp() extends BinOp

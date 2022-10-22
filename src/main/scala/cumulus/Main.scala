@@ -8,10 +8,6 @@ import cumulus.Interpreter._
 object Main {
   def main(args: Array[String]): Unit = {
     val code = Files.readFile(args.head)
-    val tokens = apply(code)
-    println(tokens)
-    val ast = parse(code)
-    println(ast)
     val out = evalPretty(code)
     println(out)
   }

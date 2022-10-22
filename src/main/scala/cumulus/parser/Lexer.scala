@@ -35,6 +35,8 @@ object Lexer extends RegexParsers {
           right_paren |
           left_brace |
           right_brace |
+          left_bracket |
+          right_bracket |
           loop |
           arrow |
           eq |
@@ -120,6 +122,14 @@ object Lexer extends RegexParsers {
 
   private def right_brace: Parser[RIGHT_BRACE] = positioned {
     "}" ^^ { _ => RIGHT_BRACE() }
+  }
+
+  private def left_bracket: Parser[LEFT_BRACKET] = positioned {
+    "[" ^^ { _ => LEFT_BRACKET() }
+  }
+
+  private def right_bracket: Parser[RIGHT_BRACKET] = positioned {
+    "]" ^^ { _ => RIGHT_BRACKET() }
   }
 
   private def eq: Parser[EQ] = positioned {

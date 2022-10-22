@@ -67,11 +67,21 @@ object Parser extends PackratParsers {
   private lazy val simplify: PackratParser[Exp] =
     (OP("_") ~ expr() ~ OP("_")) ^^ { case _ ~ exp ~ _ => UnOpExp(SimplifyOp(), exp)}
 
+  private lazy val listelseq: PackratParser[List[Exp]] = rep { COMMA() ~ expr() } ^^ {_.map(_._2)}
+
+  private lazy val listlit: PackratParser[Exp] =
+    (LEFT_BRACKET() ~ expr() ~ listelseq ~ RIGHT_BRACKET())
+      ^^ { case _ ~ exp ~ explist ~ _ => ListLit(List(exp) ++ explist) }
+
+  private lazy val emptylist: PackratParser[Exp] =
+    (LEFT_BRACKET() ~ RIGHT_BRACKET()) ^^ { case _ ~ _ => ListLit(List()) }
+
   private lazy val literal: PackratParser[Exp] =
     floatlit ^^ { lit => FloatLit(lit.v) } |
     intlit ^^ { lit => IntLit(lit.i) } |
     boolLit ^^ { lit => BoolLit(lit.b)} |
-      stringlit ^^ { lit => StringLit(lit.str)}
+    stringlit ^^ { lit => StringLit(lit.str)} |
+      listlit | emptylist
   private lazy val intlit: PackratParser[INT] =
     accept("int literal", { case lit: INT => lit})
 

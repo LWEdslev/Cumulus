@@ -1,6 +1,7 @@
 package cumulus.parser
 
 import scala.util.parsing.input.Positional
+import cumulus.AST.Exp
 
 object Tokens {
   sealed trait CuToken extends Positional
@@ -18,6 +19,8 @@ object Tokens {
   case class BOOL(b: Boolean) extends CuToken
 
   case class FLOAT(v: Float) extends CuToken
+  
+  case class LIST(list: List[Exp])
 
   case class NULL() extends CuToken
 
@@ -32,6 +35,10 @@ object Tokens {
   case class IFF() extends CuToken
 
   case class EELSE() extends CuToken
+  
+  case class LEFT_BRACKET() extends CuToken
+  
+  case class RIGHT_BRACKET() extends CuToken
 
   case class LEFT_PAREN() extends CuToken
 

@@ -16,6 +16,7 @@ object Interpreter {
   case class FracVal(n: Val, d: Val) extends Val
   case class RefVal(loc: Loc) extends Val
   case class FunVal(params: List[Var], exp: Exp, env: Env, sto: Sto) extends Val
+  case class ListVal(list: List[Val]) extends Val
   case class UnitVal() extends Val
 
   type Env = Map[Var, Val]
@@ -29,7 +30,9 @@ object Interpreter {
 
   def evalNew(code: String): (Val, Env, Sto) = eval(Parser.parse(code), makeEnv(), makeSto())
 
-  def eval(e: Exp, env: Env, sto: Sto): (Val, Env, Sto) = e match {
+  def eval(e: Exp, env: Env, sto: Sto): (Val, Env, Sto) = {
+    //println(e.pos.toString + "  :  " + env.toString() + "  :  " + sto.toString())
+    e match {
     case UnitExp() => (UnitVal(), env, sto)
     case IfElseExp(cond, ifTrue, ifFalse) =>
       val (evalCond, env1, sto1) = eval(cond, env, sto)
@@ -90,25 +93,40 @@ object Interpreter {
     case FunDecl(id: Var, params: List[Var], exp: Exp) =>
       (UnitVal(), env + (id -> FunVal(params, exp, env, sto)), sto)
     case FunExp(id: Var, args: List[Exp]) => env(id) match
-      case FunVal(params, exp, env, sto) => {
+      case RefVal(loc) => sto(loc) match
+        case ListVal(list) =>
+          if (args.length != 1) throw InterpreterError(s"you must have 1 argument for list lookups", e)
+          val (index, env1, sto1) = eval(args.head, env, sto)
+          index match {
+            case IntVal(v) =>
+              if (v > list.length || v < 1) throw InterpreterError(s"$v is out of bounds for ${list.length}", e)
+              (list(v - 1), env1, sto1)
+            case _ => throw InterpreterError(s"what the fuck made you think that you could index with $index", e)
+          }
+        case _ => throw InterpreterError(s"$id is not a list", e)
+
+      case FunVal(params, exp, envf, stof) => {
         if (params.length != args.length)
           throw InterpreterError(s"there are ${params.length} parameters and ${args.length}, you dumb fuck", e)
-        var env1 = env
-        var sto1 = sto
+        var env1 = envf ++ env
+        var sto1 = stof ++ sto
         for (a <- args.zip(params)) {
           val (argVal, env2, sto2) = eval(a._1, env1, sto1)
           env1 = env2 + (a._2 -> argVal)
           sto1 = sto2
         }
-        eval(exp, env1, sto1)
+        val (returnval, _, _) = eval(exp, env1, sto1)
+        (returnval, env, sto)
       }
-      case _ => throw InterpreterError(s"$id is not defined as a function, but who would expect you to understand", e)
+      case _ => throw InterpreterError(s"$id is not defined as a function or list, but who would expect you to understand", e)
     case BinOpExp(left, op, right) =>
       val (leftVal, env1, sto1) = eval(left, env, sto)
       val (rightVal, env2, sto2) = eval(right, env1, sto1)
       op match
         case PlusBinOp() =>
           (leftVal, rightVal) match
+            case (ListVal(a), ListVal(b)) =>
+              (ListVal(a ++ b), env2, sto2)
             case (StringVal(a), IntVal(b)) => (StringVal(a+b.toString), env2, sto2)
             case (IntVal(a), StringVal(b)) => (StringVal(a.toString+b), env2, sto2)
             case (StringVal(a), FloatVal(b)) => (StringVal(a + b.toString), env2, sto2)
@@ -283,6 +301,8 @@ object Interpreter {
       case FloatLit(f) => (FloatVal(f), env, sto)
       case BoolLit(b) => (BoolVal(b), env, sto)
       case StringLit(str) => (StringVal(str), env, sto)
+      case ListLit(list) => (ListVal(for(i <- list) yield eval(i, env, sto)._1), env, sto)
+  }
   }
 
   @tailrec
@@ -292,7 +312,19 @@ object Interpreter {
     case BoolVal(b) => b.toString
     case StringVal(s) => s
     case FracVal(_, _) => evalPretty(s"_$code _")
+    case ListVal(list) =>
+      "[" + list.map(getInner).mkString(", ") + "]"
     case _ => throw new Error(s"the output can not be printed")
+
+  def getInner(v: Val): String = {
+    v match
+      case IntVal(v) => v.toString
+      case FloatVal(v) => v.toString
+      case BoolVal(b) => b.toString
+      case StringVal(s) => s
+      case UnitVal() => "()"
+      case _ => throw new Error(s"the output can not be printed")
+  }
 
   def calculateFrac(v: Val, e: AstNode): Val = v match
     case f: FracVal => f match
